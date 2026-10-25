@@ -718,6 +718,89 @@ Interested in DevOps engineering, cloud infrastructure, automation, software del
   </a>
 </p>
 
+## 🖥️ 18. Live Application Demo & Output Screenshots
+
+Explore the deployed CloudCost Guardian platform and its operational dashboards.
+
+**Live Dashboard:** https://frontend-seven-eta-22.vercel.app/dashboard
+
+### Executive Dashboard
+
+The central overview for cloud resource health, projected spending, savings opportunities, and operational alerts.
+
+<p align="center">
+  <a href="https://frontend-seven-eta-22.vercel.app/dashboard">
+    <img src="docs/screenshots/dashboard.png" alt="CloudCost Guardian executive dashboard" width="100%"/>
+  </a>
+</p>
+
+### Resource Inventory
+
+View cloud resources, provider classifications, resource health, utilization, and monthly cost estimates.
+
+<p align="center">
+  <a href="https://frontend-seven-eta-22.vercel.app/resources">
+    <img src="docs/screenshots/resource-inventory.png" alt="CloudCost Guardian resource inventory" width="100%"/>
+  </a>
+</p>
+
+### Utilization Analytics
+
+Explore the CPU, memory, storage, and network metrics used to evaluate resource utilization.
+
+<p align="center">
+  <a href="https://frontend-seven-eta-22.vercel.app/analytics">
+    <img src="docs/screenshots/analytics.png" alt="CloudCost Guardian utilization analytics" width="100%"/>
+  </a>
+</p>
+
+### Idle Resource Detection
+
+Review potentially idle compute resources, unattached volumes, and estimated recoverable spending.
+
+<p align="center">
+  <a href="https://frontend-seven-eta-22.vercel.app/idle">
+    <img src="docs/screenshots/idle-resources.png" alt="CloudCost Guardian idle resource detection" width="100%"/>
+  </a>
+</p>
+
+### Optimization Engine
+
+Inspect rightsizing recommendations, estimated return on investment, and potential savings.
+
+<p align="center">
+  <a href="https://frontend-seven-eta-22.vercel.app/recommendations">
+    <img src="docs/screenshots/recommendations.png" alt="CloudCost Guardian optimization engine" width="100%"/>
+  </a>
+</p>
+
+### Threshold Alerts
+
+Review budget thresholds, anomaly indicators, and operational alert information.
+
+<p align="center">
+  <a href="https://frontend-seven-eta-22.vercel.app/alerts">
+    <img src="docs/screenshots/alerts.png" alt="CloudCost Guardian threshold alerts" width="100%"/>
+  </a>
+</p>
+
+### Data Quality & Ingestion
+
+Inspect telemetry validation, schema checks, ingestion quality, and synthetic-data provenance.
+
+<p align="center">
+  <a href="https://frontend-seven-eta-22.vercel.app/data-quality">
+    <img src="docs/screenshots/data-quality.png" alt="CloudCost Guardian data quality dashboard" width="100%"/>
+  </a>
+</p>
+
+### Cloud Accounts & Reporting
+
+- [Cloud Accounts](https://frontend-seven-eta-22.vercel.app/accounts) — cloud account configuration interface.
+- [CSV Reports](https://frontend-seven-eta-22.vercel.app/reports) — resource inventory and optimization report exports.
+
+> **Screenshot note:** Capture these images from the running application and save them under `docs/screenshots/`. Keep synthetic demonstration data clearly labelled; do not present simulated values as verified live cloud telemetry.
+> 
 ---
 
 ## 📄 License
