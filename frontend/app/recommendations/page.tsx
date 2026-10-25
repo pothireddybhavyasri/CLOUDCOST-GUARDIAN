@@ -1,284 +1,286 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import api from '@/lib/api'
-import { formatCurrency, withMinDuration } from '@/lib/utils'
-import { Recommendation } from '@/types'
-import { RecCardSkeleton } from '@/components/ui/Skeleton'
-import { Spinner } from '@/components/ui/Spinner'
-import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import GuardianLayout from '@/components/layout/GuardianLayout'
+import { getRecommendations, getExportCSVUrl } from '@/lib/api'
+import { Recommendation } from '@/lib/guardian-engine'
+import { formatCurrency } from '@/lib/utils'
+import {
+  Lightbulb,
+  TrendingDown,
+  Download,
+  Filter,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  ShieldAlert,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw
+} from 'lucide-react'
 
 export default function RecommendationsPage() {
-  const router = useRouter()
   const [recommendations, setRecommendations] = useState<Recommendation[]>([])
   const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
-  const [filter, setFilter] = useState('all')
-  // id + action of the row currently being applied/dismissed (per-row loading)
-  const [actioning, setActioning] = useState<{ id: string; action: 'apply' | 'dismiss' } | null>(null)
+  const [selectedType, setSelectedType] = useState<string>('ALL')
+  const [selectedProvider, setSelectedProvider] = useState<string>('ALL')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
-    fetchRecommendations()
-  }, [router])
-
-  const fetchRecommendations = async () => {
+  const fetchRecs = async () => {
     try {
-      const response = await withMinDuration(api.get('/recommendations'), 1000)
-      setRecommendations(response.data)
-    } catch (error) {
-      console.error('Failed to fetch recommendations:', error)
+      setLoading(true)
+      const data = await getRecommendations({
+        type: selectedType !== 'ALL' ? selectedType : undefined,
+        provider: selectedProvider !== 'ALL' ? selectedProvider : undefined
+      })
+      setRecommendations(data.recommendations)
+    } catch (err) {
+      console.error('Failed to load recommendations:', err)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleGenerate = async () => {
-    setGenerating(true)
-    try {
-      await api.post('/recommendations/generate')
-      // Wait a bit for generation to complete
-      setTimeout(() => fetchRecommendations(), 2000)
-    } catch (error) {
-      console.error('Failed to generate recommendations:', error)
-    } finally {
-      setGenerating(false)
-    }
+  useEffect(() => {
+    fetchRecs()
+  }, [selectedType, selectedProvider])
+
+  const handleToggleApply = (id: string) => {
+    setAppliedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
-  const handleDismiss = async (id: string) => {
-    setActioning({ id, action: 'dismiss' })
-    try {
-      await api.patch(`/recommendations/${id}/dismiss`)
-      setRecommendations(recommendations.filter(r => r.id !== id))
-    } catch (error) {
-      console.error('Failed to dismiss recommendation:', error)
-    } finally {
-      setActioning(null)
-    }
-  }
-
-  const handleApply = async (id: string) => {
-    setActioning({ id, action: 'apply' })
-    try {
-      await api.post(`/recommendations/${id}/apply`)
-      setRecommendations(recommendations.filter(r => r.id !== id))
-    } catch (error) {
-      console.error('Failed to apply recommendation:', error)
-    } finally {
-      setActioning(null)
-    }
-  }
-
-  const filteredRecommendations = recommendations.filter(rec => {
-    if (filter === 'all') return true
-    return rec.status === filter
-  })
-
-  const totalSavings = filteredRecommendations.reduce((sum, rec) => sum + rec.potential_savings, 0)
-
-  const getTypeColor = (type: string) => {
-    switch(type) {
-      case 'rightsizing': return 'text-blue-600 dark:text-blue-400 bg-blue-400/10'
-      case 'orphaned': return 'text-yellow-700 dark:text-yellow-400 bg-yellow-400/10'
-      case 'reserved_instance': return 'text-green-700 dark:text-green-400 bg-green-400/10'
-      default: return 'text-gray-600 dark:text-gray-400 bg-gray-400/10'
-    }
-  }
-
-  const getTypeLabel = (type: string) => {
-    switch(type) {
-      case 'rightsizing': return 'Rightsizing'
-      case 'orphaned': return 'Orphaned Resource'
-      case 'reserved_instance': return 'Reserved Instance'
-      default: return type
-    }
-  }
+  const totalMonthlySavings = recommendations.reduce((s, r) => s + r.potentialMonthlySavings, 0)
+  const totalAnnualSavings = recommendations.reduce((s, r) => s + r.annualSavings, 0)
+  const lowRiskCount = recommendations.filter(r => r.riskLevel === 'LOW').length
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
-        <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Cloud Cost Optimization Hub</h1>
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            <a href="/dashboard" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
-              Dashboard
-            </a>
-            <a href="/accounts" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
-              Accounts
-            </a>
-            <ThemeToggle />
-            <button
-              type="button"
-              onClick={() => {
-                localStorage.removeItem('token')
-                router.push('/login')
-              }}
-              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="p-4 sm:p-6 max-w-7xl mx-auto">
-        <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:justify-between sm:items-center">
+    <GuardianLayout title="Optimization Engine & Rightsizing">
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 p-6 rounded-2xl border border-emerald-800/40 text-white shadow-xl relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Cost Optimization Recommendations</h2>
-            <p className="text-slate-600 dark:text-slate-400 mt-1">
-              Actionable insights to reduce your cloud spending
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              Guardian Optimization Engine v1.0
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-white">
+              {formatCurrency(totalMonthlySavings)} / mo Identified Cost Recovery
+            </h2>
+            <p className="text-sm text-slate-300 mt-1 max-w-2xl">
+              Algorithmic recommendations evaluating CPU/RAM percentiles, unattached disk cleanup, and object storage lifecycle policies across your multi-cloud estate.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={generating}
-            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {generating && <Spinner />}
-            {generating ? 'Generating...' : 'Generate Recommendations'}
-          </button>
+
+          <div className="flex items-center gap-3">
+            <a
+              href={getExportCSVUrl('recommendations')}
+              download
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-md shadow-emerald-600/30 transition whitespace-nowrap"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export Recommendations CSV
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Identified Annual ROI</div>
+          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">
+            {formatCurrency(totalAnnualSavings)}/yr
+          </div>
+          <div className="text-xs text-slate-500 mt-1">Direct bottom-line cloud budget savings</div>
         </div>
 
-        {/* Summary Card */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-lg p-6 border border-blue-200 dark:border-blue-800/50 mb-6">
-          <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Total Potential Monthly Savings</p>
-          <p className="text-4xl font-bold text-green-700 dark:text-green-400">{formatCurrency(totalSavings)}</p>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
-            Based on {filteredRecommendations.length} active recommendations
-          </p>
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Actionable Opportunities</div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
+            {recommendations.length} Active Targets
+          </div>
+          <div className="text-xs text-slate-500 mt-1">Across Compute, Storage, and Databases</div>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 ${filter === 'all' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-slate-600 dark:text-slate-400'}`}
-          >
-            All ({recommendations.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter('pending')}
-            className={`px-4 py-2 ${filter === 'pending' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-slate-600 dark:text-slate-400'}`}
-          >
-            Pending
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter('applied')}
-            className={`px-4 py-2 ${filter === 'applied' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-slate-600 dark:text-slate-400'}`}
-          >
-            Applied
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter('dismissed')}
-            className={`px-4 py-2 ${filter === 'dismissed' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-slate-600 dark:text-slate-400'}`}
-          >
-            Dismissed
-          </button>
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Low-Risk Immediate Wins</div>
+          <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">
+            {lowRiskCount} Opportunities
+          </div>
+          <div className="text-xs text-slate-500 mt-1">Zero downtime, low operational risk</div>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-slate-500 font-medium">Type:</span>
+          {['ALL', 'RIGHTSIZING', 'IDLE_CLEANUP', 'UNATTACHED_VOLUME', 'STORAGE_TIERING'].map((t) => (
+            <button
+              key={t}
+              onClick={() => setSelectedType(t)}
+              className={`px-3 py-1.5 rounded-lg font-medium transition ${
+                selectedType === t
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+              }`}
+            >
+              {t.replace('_', ' ')}
+            </button>
+          ))}
         </div>
 
-        {/* Recommendations List */}
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-slate-500 font-medium">Cloud:</span>
+          {['ALL', 'AWS', 'AZURE', 'GCP'].map((p) => (
+            <button
+              key={p}
+              onClick={() => setSelectedProvider(p)}
+              className={`px-2.5 py-1 rounded-lg font-medium transition ${
+                selectedProvider === p
+                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Recommendations Cards */}
+      <div className="space-y-4">
         {loading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <RecCardSkeleton key={i} />
-            ))}
+          <div className="bg-white dark:bg-slate-900 p-12 text-center rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-400 text-sm">
+            Evaluating multi-cloud rightsizing heuristics...
           </div>
-        ) : filteredRecommendations.length === 0 ? (
-          <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-shadow hover:shadow-md hover:border-slate-300 dark:shadow-none dark:hover:border-slate-700">
-            <p className="text-slate-600 dark:text-slate-400">No recommendations found</p>
-            <p className="text-slate-500 text-sm mt-2">
-              Click "Generate Recommendations" to analyze your cloud infrastructure
-            </p>
+        ) : recommendations.length === 0 ? (
+          <div className="bg-white dark:bg-slate-900 p-12 text-center rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 text-sm">
+            No optimization recommendations match the specified filter.
           </div>
         ) : (
-          <div className="space-y-4 animate-fade-in">
-            {filteredRecommendations.map((rec) => (
-              <div key={rec.id} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-shadow hover:shadow-md hover:border-slate-300 dark:shadow-none dark:hover:border-slate-700 p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getTypeColor(rec.type)}`}>
-                        {getTypeLabel(rec.type)}
-                      </span>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        rec.status === 'pending' ? 'bg-yellow-400/10 text-yellow-700 dark:text-yellow-400' :
-                        rec.status === 'applied' ? 'bg-green-400/10 text-green-700 dark:text-green-400' :
-                        'bg-gray-400/10 text-gray-600 dark:text-gray-400'
-                      }`}>
-                        {rec.status}
-                      </span>
+          recommendations.map((rec) => {
+            const isExpanded = expandedId === rec.id
+            const isApplied = appliedIds.has(rec.id)
+
+            return (
+              <div
+                key={rec.id}
+                className={`bg-white dark:bg-slate-900 rounded-2xl border transition-all ${
+                  isApplied
+                    ? 'border-emerald-500/50 bg-emerald-50/20 dark:bg-emerald-950/20'
+                    : 'border-slate-200 dark:border-slate-800 shadow-sm hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <div className="p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          {rec.provider}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                          {rec.type.replace('_', ' ')}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                          rec.riskLevel === 'LOW'
+                            ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
+                        }`}>
+                          Risk: {rec.riskLevel}
+                        </span>
+                      </div>
+
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        {rec.title}
+                      </h3>
+
+                      <p className="text-xs text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
+                        {rec.description}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-4 text-xs pt-2">
+                        <div className="flex items-center gap-1.5 text-slate-500">
+                          <span>Current:</span>
+                          <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
+                            {rec.currentConfiguration}
+                          </span>
+                        </div>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                          <span>Recommended:</span>
+                          <span className="font-mono font-bold">
+                            {rec.recommendedConfiguration}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{rec.title}</h3>
-                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">{rec.description}</p>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <p className="text-slate-500">Resource ID</p>
-                        <p className="text-slate-900 dark:text-white font-mono text-xs">{rec.resource_id}</p>
+
+                    {/* Savings & Actions */}
+                    <div className="flex lg:flex-col items-center lg:items-end justify-between lg:justify-center border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100 dark:border-slate-800 flex-shrink-0">
+                      <div className="text-right">
+                        <div className="text-xs text-slate-500">Estimated Savings</div>
+                        <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                          +{formatCurrency(rec.potentialMonthlySavings)}/mo
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono">
+                          {formatCurrency(rec.annualSavings)}/yr
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-slate-500">Resource Type</p>
-                        <p className="text-slate-900 dark:text-white">{rec.resource_type}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500">Current Monthly Cost</p>
-                        <p className="text-slate-900 dark:text-white">{formatCurrency(rec.current_value)}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500">Potential Savings</p>
-                        <p className="text-green-700 dark:text-green-400 font-semibold">{formatCurrency(rec.potential_savings)}</p>
+
+                      <div className="flex items-center gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedId(isExpanded ? null : rec.id)}
+                          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 flex items-center gap-1 transition"
+                        >
+                          <span>{isExpanded ? 'Hide Steps' : 'View Runbook'}</span>
+                          {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleApply(rec.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition ${
+                            isApplied
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800'
+                          }`}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>{isApplied ? 'Reviewed' : 'Acknowledge'}</span>
+                        </button>
                       </div>
                     </div>
                   </div>
-                  
-                  {rec.status === 'pending' && (
-                    <div className="flex gap-2 sm:ml-4">
-                      {(() => {
-                        const isApplying = actioning?.id === rec.id && actioning.action === 'apply'
-                        const isDismissing = actioning?.id === rec.id && actioning.action === 'dismiss'
-                        const busy = actioning?.id === rec.id
-                        return (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => handleApply(rec.id)}
-                              disabled={busy}
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {isApplying && <Spinner className="h-3.5 w-3.5" />}
-                              {isApplying ? 'Applying...' : 'Apply'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDismiss(rec.id)}
-                              disabled={busy}
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white text-sm rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {isDismissing && <Spinner className="h-3.5 w-3.5" />}
-                              {isDismissing ? 'Dismissing...' : 'Dismiss'}
-                            </button>
-                          </>
-                        )
-                      })()}
+
+                  {/* Expanded Runbook Steps */}
+                  {isExpanded && (
+                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 p-4 rounded-xl space-y-2">
+                      <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <ShieldAlert className="w-4 h-4 text-emerald-500" />
+                        Execution Runbook & Remediation Protocol:
+                      </div>
+                      <ol className="list-decimal list-inside text-xs text-slate-600 dark:text-slate-400 space-y-1">
+                        {rec.actionableSteps.map((step, idx) => (
+                          <li key={idx} className="leading-relaxed">{step}</li>
+                        ))}
+                      </ol>
                     </div>
                   )}
                 </div>
               </div>
-            ))}
-          </div>
+            )
+          })
         )}
-      </main>
-    </div>
+      </div>
+    </GuardianLayout>
   )
 }

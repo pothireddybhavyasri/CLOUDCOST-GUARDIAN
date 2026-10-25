@@ -1,5 +1,5 @@
-# Build stage - using Go 1.26
-FROM golang:1.26-alpine AS builder
+# Build stage - Go 1.23
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
@@ -32,5 +32,4 @@ COPY --from=builder /app/migrator /app/migrator
 
 EXPOSE 8080
 
-# Default command (runs API, but you can override in Railway settings)
 CMD ["/app/api"]

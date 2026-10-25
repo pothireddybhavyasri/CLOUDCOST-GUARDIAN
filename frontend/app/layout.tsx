@@ -6,8 +6,11 @@ import { ThemeProvider } from '@/components/theme/ThemeProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Cloud Cost Optimization Hub',
-  description: 'Multi-cloud cost observability and optimization platform',
+  title: 'CloudCost Guardian — Cloud Resource Usage & Optimization Platform',
+  description: 'Autonomous multi-cloud cost observability, idle resource detection, rightsizing engine, and budget governance for AWS, Azure, and GCP.',
+  icons: {
+    icon: '/favicon.ico',
+  }
 }
 
 // Runs before paint to apply the saved theme and prevent a flash of the wrong theme.

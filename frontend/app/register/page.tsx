@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { register } from '@/lib/api'
 import { Spinner } from '@/components/ui/Spinner'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import { ShieldCheck, Mail, Lock, User } from 'lucide-react'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -20,8 +21,6 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
 
-    // Client-side only: confirm the passwords match before submitting.
-    // confirmPassword is never sent to the backend.
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       return
@@ -42,97 +41,104 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800">
+    <div className="relative flex min-h-screen items-center justify-center p-4 bg-slate-950 text-slate-100">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-      <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Cloud Cost Hub</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">Create your free account</p>
+
+      <div className="w-full max-w-md p-8 space-y-6 bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-800">
+        <div className="text-center space-y-2">
+          <div className="inline-flex w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-indigo-600 items-center justify-center shadow-lg shadow-indigo-500/20 mb-2">
+            <ShieldCheck className="w-7 h-7 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center justify-center gap-1.5">
+            CloudCost<span className="text-emerald-400">Guardian</span>
+          </h1>
+          <p className="text-xs text-slate-400">Create your Cloud Optimizer Account</p>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg text-sm">
+          <div className="bg-red-500/10 border border-red-500/40 text-red-400 px-4 py-2.5 rounded-xl text-xs">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="John Doe"
-            />
+            <label className="block text-slate-300 font-medium mb-1.5">Full Name</label>
+            <div className="relative">
+              <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="Jane Doe"
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
-            />
+            <label className="block text-slate-300 font-medium mb-1.5">Email Address</label>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="engineer@company.com"
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-            />
-            <p className="text-xs text-slate-500 mt-1">Minimum 6 characters</p>
+            <label className="block text-slate-300 font-medium mb-1.5">Password</label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-            />
+            <label className="block text-slate-300 font-medium mb-1.5">Confirm Password</label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex w-full items-center justify-center gap-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-md shadow-emerald-600/30 transition"
           >
-            {loading && <Spinner />}
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? <Spinner className="h-4 w-4" /> : 'Create Account'}
           </button>
         </form>
 
-        <p className="text-center text-slate-600 dark:text-slate-400 text-sm">
+        <div className="text-center text-xs text-slate-400">
           Already have an account?{' '}
-          <Link href="/login" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
+          <Link href="/login" className="text-emerald-400 hover:underline font-semibold">
             Sign in
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   )

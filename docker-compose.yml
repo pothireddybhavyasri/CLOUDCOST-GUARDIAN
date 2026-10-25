@@ -1,7 +1,54 @@
+version: '3.8'
+
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: guardian-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://backend:8080
+    depends_on:
+      - backend
+    networks:
+      - guardian-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: guardian-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - ENV=production
+      - LOG_LEVEL=info
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=ccoh
+      - DB_PASSWORD=ccoh123
+      - DB_NAME=ccoh
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=cloudcost-guardian-super-secure-production-jwt-token-2026
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - guardian-network
+
   postgres:
     image: timescale/timescaledb:latest-pg15
-    container_name: ccoh-postgres
+    container_name: guardian-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ccoh
       POSTGRES_PASSWORD: ccoh123
@@ -16,11 +63,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - ccoh-network
+      - guardian-network
 
   redis:
     image: redis:7-alpine
-    container_name: ccoh-redis
+    container_name: guardian-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
@@ -31,12 +79,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - ccoh-network
+      - guardian-network
 
 volumes:
   postgres_data:
   redis_data:
 
 networks:
-  ccoh-network:
+  guardian-network:
     driver: bridge

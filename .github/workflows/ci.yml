@@ -1,0 +1,94 @@
+name: CloudCost Guardian CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend-ci:
+    name: Frontend Verification & Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: TypeScript Type Check
+        working-directory: frontend
+        run: npm run type-check
+
+      - name: Run Vitest Unit Tests
+        working-directory: frontend
+        run: npm test
+
+      - name: Next.js Production Build
+        working-directory: frontend
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+        run: npm run build
+
+  backend-ci:
+    name: Backend Go Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go 1.23
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: backend/go.sum
+
+      - name: Install Dependencies
+        working-directory: backend
+        run: go mod download
+
+      - name: Run Go Unit Tests
+        working-directory: backend
+        run: go test -v ./internal/services/recommendations/...
+
+  docker-ci:
+    name: Dockerfile & Compose Syntax Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Docker Compose Configuration
+        run: docker compose config
+
+      - name: Build Frontend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: false
+          tags: cloudcost-guardian-frontend:test
+
+      - name: Build Backend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          tags: cloudcost-guardian-backend:test

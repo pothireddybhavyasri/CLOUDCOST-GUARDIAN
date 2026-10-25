@@ -1,79 +1,180 @@
-# Cloud Cost Observability & Optimization Hub (CCOH)
+# CloudCost Guardian — Cloud Resource Usage & Optimization Platform
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://cloud-cost-optimization-hub.vercel.app/)
+[![CI/CD Pipeline](https://github.com/pothireddybhavyasri/cloudcost-guardian/actions/workflows/ci.yml/badge.svg)](https://github.com/pothireddybhavyasri/cloudcost-guardian/actions/workflows/ci.yml)
+[![Tests Passing](https://img.shields.io/badge/tests-20%2F20%20passed-brightgreen.svg)](docs/COLLEGE_PROJECT_REPORT.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![GitHub contributors](https://img.shields.io/github/contributors/oseghalep/cloud-cost-optimization-hub)](https://github.com/oseghalep/cloud-cost-optimization-hub/graphs/contributors)
-[![First Contributions](https://img.shields.io/badge/first--contributions-welcome-brightgreen)](CONTRIBUTING.md)
+[![Next.js 15](https://img.shields.io/badge/Next.js-15.5-black.svg)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org)
+[![FinOps FOCUS](https://img.shields.io/badge/FinOps-FOCUS%201.0-emerald.svg)](https://focus.finops.org)
 
-**Stop cloud cost surprises. One dashboard for AWS, GCP, and Azure.**
+> **Autonomous multi-cloud cost observability, zombie resource detection, rightsizing engine, and budget governance across AWS, Microsoft Azure, and Google Cloud Platform.**
 
-## ✨ Features (v0.1)
+Developed as a College Computer Science Engineering Capstone Project by **Pothireddy Bhavya Sri**.
 
-- ✅ Multi-cloud ready architecture
-- ✅ User authentication (register/login)
-- ✅ Professional dashboard UI
-- ✅ Mock cost data to demo the platform
-- ✅ Docker Compose one-command setup
-- ✅ Ready for real AWS/GCP/Azure integration
+---
 
-## 🚀 Quick Start
+## 🌟 Key Platform Features
+
+- 🛡️ **Multi-Cloud Fleet Telemetry:** Unified monitoring and cost attribution for AWS (EC2, RDS, EBS, S3, Lambda), Microsoft Azure (VMs, Azure SQL, Blob), and GCP (Compute Engine, Cloud Storage, Cloud Run).
+- 💤 **Automated Idle & Zombie Resource Detection:** Detects unattached storage disks, stopped virtual machines incurring storage charges, and zombie workloads with $<5\%$ CPU utilization over 7+ days.
+- 💡 **Algorithmic Rightsizing Engine:** Projections of monthly and annual ROI savings calculated using the standard 720 hours/month basis with step-by-step operational runbooks.
+- 🚨 **Threshold-Based Alerts System:** Real-time triggers for budget overruns, high-cost resource anomalies ($>\$400$/mo), and compute stress bottlenecks ($>90\%$ CPU).
+- 📈 **Utilization Analytics:** 24-hour time-series charts tracking CPU %, Memory (RAM) %, Storage allocation, and Network Throughput in Mbps.
+- 🛡️ **Continuous Data Quality Audit:** Automated pipeline monitoring validating schema compliance, null value checks, non-negative bounds, and non-production synthetic watermarks.
+- 📥 **RFC-4180 CSV Data Export:** Instant one-click downloads for full fleet inventory and optimization recommendations for spreadsheet audits.
+- 🚀 **One-Click Faculty Demo Access:** Instant guest bypass button on `/login` enabling instant evaluation of the platform without credential setup.
+
+---
+
+## 🏗️ Architecture & Dual-Mode Execution
+
+CloudCost Guardian implements a resilient dual-mode architecture:
+1. **Serverless Mode (Zero-Dependency Local & Cloud):** Powered by Next.js 15 App Router with full-stack serverless API route handlers (`/api/v1/*`). Runs locally with only Node.js installed or deployed directly to Vercel with zero database setup required.
+2. **Containerized Microservices Mode:** Includes the Go 1.23 REST API microservice (`backend/`), TimescaleDB / PostgreSQL time-series storage, Redis caching, and Docker Compose orchestration.
+
+```mermaid
+flowchart TD
+    subgraph MultiCloud [Multi-Cloud Telemetry Sources]
+        AWS[AWS: EC2, RDS, EBS, S3, Lambda]
+        Azure[Azure: VMs, Azure SQL, Blob]
+        GCP[GCP: Compute Engine, GCS, Cloud Run]
+    end
+
+    subgraph GuardianCore [CloudCost Guardian Engine Core]
+        Ingestion[Synthetic Ingestion Daemon]
+        FOCUS[FOCUS 1.0 Normalizer]
+        IdleCheck[Zombie Resource Detector]
+        Rightsizer[Rightsizing & Savings Engine]
+        Alerts[Threshold Anomaly Monitor]
+        CSVEngine[RFC-4180 CSV Generator]
+    end
+
+    subgraph PresentationLayer [Presentation & API Layer]
+        NextAPI["Serverless REST API (/api/v1/*)"]
+        DashboardUI[Responsive Next.js 15 UI & Themes]
+        Recharts[Interactive Analytics Visualizations]
+    end
+
+    MultiCloud --> Ingestion
+    Ingestion --> FOCUS
+    FOCUS --> IdleCheck
+    FOCUS --> Rightsizer
+    FOCUS --> Alerts
+    IdleCheck --> NextAPI
+    Rightsizer --> NextAPI
+    Alerts --> NextAPI
+    NextAPI --> DashboardUI
+    DashboardUI --> Recharts
+    NextAPI --> CSVEngine
+```
+
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+- **Node.js:** v20.x, v22.x, or v24.x
+- **npm:** v10.x or v11.x
+
+*(Docker and Go are optional — the platform executes standalone with Node.js).*
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/pothireddybhavyasri/cloudcost-guardian.git
+cd cloudcost-guardian
+```
+
+### 2. Install Frontend Dependencies
+```bash
+cd frontend
+npm install
+```
+
+### 3. Run Automated Unit Tests & Type Check
+```bash
+npm run type-check   # Verifies TypeScript integrity (0 errors)
+npm test             # Executes 20 automated Vitest unit tests
+```
+
+### 4. Launch Development Server
+```bash
+npm run dev
+```
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+
+- Click **"Launch Instant Demo Dashboard"** on `/login` to access the full platform immediately.
+
+---
+
+## 🐳 Docker Deployment (Optional)
+
+When Docker and Docker Compose are installed:
 
 ```bash
-# Clone the repository
-git clone https://github.com/oseghalep/cloud-cost-optimization-hub.git
-cd cloud-cost-optimization-hub
+# Build and start all 4 services (Frontend, Backend, PostgreSQL, Redis)
+docker compose up -d
 
-# Copy environment variables
-cp .env.example .env
+# Verify container health
+docker compose ps
+```
 
-# Start everything (database, backend, frontend)
-make up
+---
 
-# Wait 30 seconds for services to initialize
-# Then open http://localhost:3000
+## 🧪 Automated Testing & Verification
 
+The project includes an automated test suite verifying mathematical calculations, idle detection heuristics, threshold alerting, and CSV serialization:
 
-Default credentials (first-time setup):
+```bash
+cd frontend
+npm test
+```
 
-Go to /register and create an account
+### Verified Test Cases:
+- `Test 1-4`: Cost savings calculation and negative bound protection ($S = (C_{curr} - C_{sugg}) \times 720$).
+- `Test 5-9`: Idle resource detection (unattached volumes, stopped VMs, compute $<5\%$ CPU for $\ge 7$ days).
+- `Test 10-12`: Rightsizing and storage tiering recommendations.
+- `Test 13-14`: Threshold budget overrun and orphan disk alerting.
+- `Test 15-18`: Multi-cloud synthetic telemetry consistency and 24h metrics.
+- `Test 19-20`: RFC-4180 CSV escaping and header compliance.
 
-Log in at /login
+---
 
-View the dashboard with sample data
+## 📁 Repository Structure
 
-🏗️ Architecture
-This is a full-stack application with:
+```
+cloudcost-guardian/
+├── .github/workflows/ci.yml       # GitHub Actions CI/CD matrix pipeline
+├── backend/                       # Go 1.23 REST API microservice
+│   ├── cmd/api/main.go            # Go HTTP entrypoint
+│   ├── internal/services/         # Rightsizing algorithms
+│   └── Dockerfile                 # Go container build
+├── frontend/                      # Next.js 15 Full-Stack Application
+│   ├── app/                       # App Router pages & /api/v1/ serverless routes
+│   │   ├── accounts/              # Cloud accounts view
+│   │   ├── alerts/                # Threshold alerts view
+│   │   ├── analytics/             # Utilization time-series view
+│   │   ├── dashboard/             # Executive overview view
+│   │   ├── data-quality/          # Data quality audit view
+│   │   ├── idle/                  # Idle & zombie detection view
+│   │   ├── recommendations/       # Rightsizing view
+│   │   ├── reports/               # CSV reports download view
+│   │   └── resources/             # Fleet inventory view
+│   ├── components/                # Modular UI & Layout components
+│   ├── lib/
+│   │   ├── api.ts                 # Typed client API client
+│   │   └── guardian-engine.ts     # Guardian core calculation engine
+│   └── tests/                     # Automated Vitest test suite
+├── docs/
+│   ├── ARCHITECTURE.md            # Detailed architectural specifications
+│   └── COLLEGE_PROJECT_REPORT.md  # Comprehensive academic project report
+├── docker-compose.yml             # 4-tier container orchestration
+├── LICENSE                        # Apache 2.0 License
+└── README.md
+```
 
-Backend: Go 1.21+ with Gin framework
+---
 
-Database: PostgreSQL 15 + TimescaleDB for time-series
+## 📄 License & Attribution
 
-Queue: Redis (for background jobs)
-
-Frontend: Next.js 14 + TypeScript + Tailwind CSS
-
-Deployment: Docker Compose (dev) + Helm chart (prod)
-
-📁 Project Structure
-text
-backend/     - Go API server
-frontend/    - Next.js application
-docker-compose.yml - Local development environment
-Makefile     - Common development commands
-
-🔧 Development Commands
-Command	Description
-make dev-deps	Start only Postgres & Redis
-make up	Start all services
-make down	Stop all services
-make logs	View container logs
-make test	Run all tests
-
-## 🤝 Contributors Wanted
-🎁 Contributor Incentive
-$25 gift card for the first 50 contributors with a merged PR.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
-📄 License
-Apache 2.0
+This project is licensed under the **Apache License 2.0**.
+Derived in part from open-source foundations with copyright retained by original upstream authors (Oseghale Paul Okosun, 2026). Substantially extended, customized, and transformed into **CloudCost Guardian** by **Pothireddy Bhavya Sri** for academic evaluation. See `docs/COLLEGE_PROJECT_REPORT.md` for a complete audit of original contributions.

@@ -48,3 +48,6 @@ CLAUDE.md
 
 # Local-only compose overrides
 docker-compose.override.yml
+# Vercel
+.vercel/
+
